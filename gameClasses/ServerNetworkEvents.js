@@ -27,6 +27,23 @@ var ServerNetworkEvents = {
 		if (!ige.server.players[clientId]) {
 			ige.server.players[clientId] = new Player(clientId)
 				.streamMode(1)
+                .box2dBody({
+                    type: 'dynamic',
+                    linearDamping: 0.0,
+                    angularDamping: 0.1,
+                    allowSleep: true,
+                    bullet: false,
+                    gravitic: true,
+                    fixedRotation: false,
+                    fixtures: [{
+                        density: 2.0,
+                        friction: 0.8,
+                        restitution: 0.0,
+                        shape: {
+                            type: 'rectangle'
+                        }
+                    }]
+                })
 				.mount(ige.server.scene1);
 
 			// Tell the client to track their player entity

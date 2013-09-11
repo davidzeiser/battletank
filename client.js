@@ -19,8 +19,16 @@ var Client = IgeClass.extend({
 
 		// Load the textures we want to use
 		this.textures = {
-			ship: new IgeTexture('./assets/tank.png')
+			ship: new IgeTexture('./assets/tank.png'),
+            bg: new IgeTexture('./assets/background.png')
 		};
+
+        this.ui = {
+            hp: 100,
+            ammo: 10
+        };
+
+        this.uiOBJ = [];
 
 		ige.on('texturesLoaded', function () {
 			// Ask the engine to start
@@ -49,22 +57,51 @@ var Client = IgeClass.extend({
 						self.mainScene = new IgeScene2d()
 							.id('mainScene');
 
+                        self.bglayer = new IgeScene2d()
+                            .id('bglayer')
+                            .layer(0)
+                            .mount(self.mainScene);
+
 						// Create the scene
 						self.scene1 = new IgeScene2d()
 							.id('scene1')
+                            .layer(1)
 							.mount(self.mainScene);
 
+                        // Add background
+                        self.bg = new IgeEntity()
+                            .id('background')
+                            .width(1440)
+                            .height(960)
+                            .texture(self.textures.bg)
+                            .mount(self.bglayer);
+
+                        // Create the UI
 						self.uiScene = new IgeScene2d()
 							.id('uiScene')
-							.ignoreCamera(true)
+                            .ignoreCamera(true)
+                            .layer(2)
 							.mount(self.mainScene);
 
+                        // Create healthbar and add it to UI
+                        self.uiOBJ[0] = new IgeUiEntity()
+                            .id('healthBar')
+                            .depth(10)
+                            .backgroundColor('#42db13')
+                            .width(192)
+                            .height(32)
+                            .top(15)
+                            .left(15)
+                            .borderColor('#666666')
+                            .borderWidth(2)
+                            .backgroundPosition(0, 0)
+                            .mount(self.uiScene);
 						// Create the main viewport and set the scene
 						// it will "look" at as the new scene1 we just
 						// created above
 						self.vp1 = new IgeViewport()
 							.id('vp1')
-							.autoSize(true)
+                            .autoSize(true)
 							.scene(self.mainScene)
 							.drawBounds(false)
 							.mount(ige);
@@ -85,42 +122,7 @@ var Client = IgeClass.extend({
 						// Enable console logging of network messages but only show 10 of them and
 						// then stop logging them. This is a demo of how to help you debug network
 						// data messages.
-						ige.network.debugMax(10);
 						ige.network.debug(true);
-
-						// Create an IgeUiTimeStream entity that will allow us to "visualise" the
-						// timestream data being interpolated by the player entity
-						self.tsVis = new IgeUiTimeStream()
-							.height(140)
-							.width(400)
-							.top(0)
-							.center(0)
-							.mount(self.uiScene);
-
-						self.custom1 = {
-							name: 'Delta',
-							value: 0
-						};
-
-						self.custom2 = {
-							name: 'Data Delta',
-							value: 0
-						};
-
-						self.custom3 = {
-							name: 'Offset Delta',
-							value: 0
-						};
-
-						self.custom4 = {
-							name: 'Interpolate Time',
-							value: 0
-						};
-
-						ige.watchStart(self.custom1);
-						ige.watchStart(self.custom2);
-						ige.watchStart(self.custom3);
-						ige.watchStart(self.custom4);
 					});
 				}
 			});

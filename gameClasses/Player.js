@@ -1,8 +1,8 @@
-var Player = IgeEntity.extend({
+var Player = IgeEntityBox2d.extend({
 	classId: 'Player',
 
 	init: function () {
-		IgeEntity.prototype.init.call(this);
+		IgeEntityBox2d.prototype.init.call(this);
 
 		var self = this;
 
@@ -26,7 +26,7 @@ var Player = IgeEntity.extend({
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'score']);
+		this.streamSections(['transform', 'score', 'hp']);
 	},
 
 	/**
@@ -51,13 +51,21 @@ var Player = IgeEntity.extend({
 				// Return current data
 				return this._score;
 			}
-		} else {
+        }
+        if (sectionId === 'hp') {
+            if (data) {
+                this._hp = data;
+            } else {
+                return this._hp;
+            }
+		}
+        else {
 			// The section was not one that we handle here, so pass this
 			// to the super-class streamSectionData() method - it handles
 			// the "transform" section by itself
 			return IgeEntity.prototype.streamSectionData.call(this, sectionId, data);
 		}
-	},
+    },
 
 	/**
 	 * Called every frame by the engine when this entity is mounted to the
