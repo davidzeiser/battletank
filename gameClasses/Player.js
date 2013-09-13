@@ -6,27 +6,38 @@ var Player = IgeEntityBox2d.extend({
 
 		var self = this;
 
-		this.drawBounds(false);
+		this.drawBounds(true);
 
 		// Rotate to point upwards
 		this.controls = {
 			left: false,
 			right: false,
-			thrust: false
+			thrust: false,
+            brake: false,
+            shoot: false
 		};
+
+        // Create status variables
+
+            this.status = {
+                ammo:  10,
+                hp: 100,
+                reloading: false
+            };
+
 
 		if (ige.isServer) {
 			this.addComponent(IgeVelocityComponent);
-		}
+        }
 
 		if (!ige.isServer) {
 			self.texture(ige.client.textures.ship)
-			.width(250)
-			.height(130);
+			.width(125)
+			.height(75);
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'score', 'hp']);
+		this.streamSections(['transform', 'score']);
 	},
 
 	/**
@@ -52,18 +63,12 @@ var Player = IgeEntityBox2d.extend({
 				return this._score;
 			}
         }
-        if (sectionId === 'hp') {
-            if (data) {
-                this._hp = data;
-            } else {
-                return this._hp;
-            }
-		}
+
         else {
 			// The section was not one that we handle here, so pass this
 			// to the super-class streamSectionData() method - it handles
 			// the "transform" section by itself
-			return IgeEntity.prototype.streamSectionData.call(this, sectionId, data);
+			return IgeEntityBox2d.prototype.streamSectionData.call(this, sectionId, data);
 		}
     },
 
@@ -83,12 +88,28 @@ var Player = IgeEntityBox2d.extend({
 				this.rotateBy(0, 0, Math.radians(0.2 * ige._tickDelta));
 			}
 
+            this.velocity.x(this.velocity._x * .2);
+            this.velocity.y(this.velocity._y * .2);
+
 			if (this.controls.thrust) {
-				this.velocity.byAngleAndPower(this._rotate.z + Math.radians(-90), 0.1);
-			} else {
-				this.velocity.x(0);
-				this.velocity.y(0);
+				this.velocity.byAngleAndPower(this._rotate.z + Math.radians(-180), 0.15);
 			}
+
+            if (this.controls.brake) {
+                this.velocity.x(this.velocity._x * .7);
+                this.velocity.y(this.velocity._x * .7);
+            }
+            if (this.controls.shoot) {
+                if(!this.status.reloading) {
+                    this.bullet = new Bullet()
+                        .streamMode(1)
+                        .id('bullet')
+                        .velocity.byAngleAndPower(this._rotate.z + Math.radians(-180), 2)
+                        .mount(this);
+
+                    this.status.reloading = true;
+                }
+            }
 		}
 		/* CEXCLUDE */
 
@@ -146,10 +167,44 @@ var Player = IgeEntityBox2d.extend({
 					ige.network.send('playerControlThrustUp');
 				}
 			}
+            if (ige.input.actionState('brake')) {
+                if (!this.controls.brake) {
+                    // Record the new state
+                    this.controls.brake = true;
+
+                    // Tell the server about our control change
+                    ige.network.send('playerControlBrakeDown');
+                }
+            } else {
+                if (this.controls.brake) {
+                    // Record the new state
+                    this.controls.brake = false;
+
+                    // Tell the server about our control change
+                    ige.network.send('playerControlBrakeUp');
+                }
+            }
+            if (ige.input.actionState('shoot')) {
+                if (!this.controls.shoot) {
+                    // Record the new state
+                    this.controls.shoot = true;
+
+                    // Tell the server about our control change
+                    ige.network.send('playerControlShootDown');
+                }
+            } else {
+                if (this.controls.shoot) {
+                    // Record the new state
+                    this.controls.shoot = false;
+
+                    // Tell the server about our control change
+                    ige.network.send('playerControlShootUp');
+                }
+            }
 		}
 
 		// Call the IgeEntity (super-class) tick() method
-		IgeEntity.prototype.tick.call(this, ctx);
+		IgeEntityBox2d.prototype.tick.call(this, ctx);
 	}
 });
 

@@ -39,7 +39,18 @@ var ClientNetworkEvents = {
 				}
 			});
 		}
-	}
+	},
+    _onPlayerDamage: function (data) {
+        //if(ige.client.hp);
+        ige.client.ui.hp -= data;
+        console.log('client damage taken');
+    },
+
+    _onPlayerDeath: function (data) {
+        ige.client.ui.hp = 0;
+        ige.client.uiOBJ[1].show();
+        ige.client.vp1.camera.trackTranslate(ige.$(data), 50)
+    }
 };
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = ClientNetworkEvents; }

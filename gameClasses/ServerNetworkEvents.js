@@ -27,17 +27,19 @@ var ServerNetworkEvents = {
 		if (!ige.server.players[clientId]) {
 			ige.server.players[clientId] = new Player(clientId)
 				.streamMode(1)
+                .drawBounds(true)
+                .id(clientId)
                 .box2dBody({
                     type: 'dynamic',
                     linearDamping: 0.0,
-                    angularDamping: 0.1,
+                    angularDamping: 0.3,
                     allowSleep: true,
                     bullet: false,
                     gravitic: true,
                     fixedRotation: false,
                     fixtures: [{
                         density: 2.0,
-                        friction: 0.8,
+                        friction: 5.0,
                         restitution: 0.0,
                         shape: {
                             type: 'rectangle'
@@ -48,8 +50,16 @@ var ServerNetworkEvents = {
 
 			// Tell the client to track their player entity
 			ige.network.send('playerEntity', ige.server.players[clientId].id(), clientId);
+            console.log('Creating entity with client ID: ', clientId)
 		}
 	},
+
+    _onPlayerDamage: function (data, clientId) {
+
+    },
+    _onPlayerDeath: function (data, clientId) {
+
+    },
 
 	_onPlayerLeftDown: function (data, clientId) {
 		ige.server.players[clientId].controls.left = true;
@@ -73,7 +83,23 @@ var ServerNetworkEvents = {
 
 	_onPlayerThrustUp: function (data, clientId) {
 		ige.server.players[clientId].controls.thrust = false;
-	}
+	},
+
+    _onPlayerBrakeDown: function (data, clientId) {
+        ige.server.players[clientId].controls.brake = true;
+    },
+
+    _onPlayerBrakeUp: function (data, clientId) {
+        ige.server.players[clientId].controls.brake = false;
+    },
+
+    _onPlayerShootDown: function (data, clientId) {
+        ige.server.players[clientId].controls.shoot = true;
+    },
+
+    _onPlayerShootUp: function (data, clientId) {
+        ige.server.players[clientId].controls.shoot = false;
+    }
 };
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = ServerNetworkEvents; }

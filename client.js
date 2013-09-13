@@ -13,6 +13,7 @@ var Client = IgeClass.extend({
 
 		// Implement our game methods
 		this.implement(ClientNetworkEvents);
+        //this.implement(HealthBar);
 
 		// Create the HTML canvas
 		ige.createFrontBuffer(true);
@@ -20,7 +21,8 @@ var Client = IgeClass.extend({
 		// Load the textures we want to use
 		this.textures = {
 			ship: new IgeTexture('./assets/tank.png'),
-            bg: new IgeTexture('./assets/background.png')
+            bg: new IgeTexture('./assets/background.png'),
+            deathscreen: new IgeTexture('./assets/deathscreen.png')
 		};
 
         this.ui = {
@@ -40,9 +42,11 @@ var Client = IgeClass.extend({
 					// than before the scene etc are created... maybe you want
 					// a splash screen or a menu first? Then connect after you've
 					// got a username or something?
-					ige.network.start('http://localhost:2000', function () {
+					ige.network.start('http://10.0.0.6:2000', function () {
 						// Setup the network command listeners
 						ige.network.define('playerEntity', self._onPlayerEntity); // Defined in ./gameClasses/ClientNetworkEvents.js
+                        ige.network.define('playerDamage', self._onPlayerDamage); // Defined in ./gameClasses/ClientNetworkEvents.js
+                        ige.network.define('playerDeath', self._onPlayerDeath); // Defined in ./gameClasses/ClientNetworkEvents.js
 
 						// Setup the network stream handler
 						ige.network.addComponent(IgeStreamComponent)
@@ -84,18 +88,25 @@ var Client = IgeClass.extend({
 							.mount(self.mainScene);
 
                         // Create healthbar and add it to UI
-                        self.uiOBJ[0] = new IgeUiEntity()
+                        self.uiOBJ[0] = new HealthBar()
                             .id('healthBar')
                             .depth(10)
                             .backgroundColor('#42db13')
-                            .width(192)
-                            .height(32)
-                            .top(15)
-                            .left(15)
                             .borderColor('#666666')
                             .borderWidth(2)
                             .backgroundPosition(0, 0)
                             .mount(self.uiScene);
+
+                        self.uiOBJ[1] = new IgeUiEntity()
+                            .id('deathMessage')
+                            .center(0)
+                            .middle(0)
+                            .texture(self.textures.deathscreen)
+                            .width('100%')
+                            .height('100%')
+                            .hide()
+                            .mount(self.uiScene);
+
 						// Create the main viewport and set the scene
 						// it will "look" at as the new scene1 we just
 						// created above
@@ -110,6 +121,8 @@ var Client = IgeClass.extend({
 						ige.input.mapAction('left', ige.input.key.left);
 						ige.input.mapAction('right', ige.input.key.right);
 						ige.input.mapAction('thrust', ige.input.key.up);
+                        ige.input.mapAction('brake', ige.input.key.down);
+                        ige.input.mapAction('shoot', ige.input.key.space);
 
 						// Ask the server to create an entity for us
 						ige.network.send('playerEntity');

@@ -28,14 +28,21 @@ var Server = IgeClass.extend({
 					if (success) {
 						// Create some network commands we will need
 						ige.network.define('playerEntity', self._onPlayerEntity);
+                        ige.network.define('playerDamage', self._onPlayerDamage);
+                        ige.network.define('playerDeath', self._onPlayerDeath);
 
-						ige.network.define('playerControlLeftDown', self._onPlayerLeftDown);
+
+                        ige.network.define('playerControlLeftDown', self._onPlayerLeftDown);
 						ige.network.define('playerControlRightDown', self._onPlayerRightDown);
 						ige.network.define('playerControlThrustDown', self._onPlayerThrustDown);
+                        ige.network.define('playerControlBrakeDown', self._onPlayerBrakeDown);
+                        ige.network.define('playerControlShootDown', self._onPlayerShootDown);
 
 						ige.network.define('playerControlLeftUp', self._onPlayerLeftUp);
 						ige.network.define('playerControlRightUp', self._onPlayerRightUp);
 						ige.network.define('playerControlThrustUp', self._onPlayerThrustUp);
+                        ige.network.define('playerControlBrakeUp', self._onPlayerBrakeUp);
+                        ige.network.define('playerControlShootUp', self._onPlayerShootUp);
 
 						ige.network.on('connect', self._onPlayerConnect); // Defined in ./gameClasses/ServerNetworkEvents.js
 						ige.network.on('disconnect', self._onPlayerDisconnect); // Defined in ./gameClasses/ServerNetworkEvents.js
@@ -66,6 +73,61 @@ var Server = IgeClass.extend({
 							.scene(self.mainScene)
 							.drawBounds(true)
 							.mount(ige);
+
+                        ige.box2d.contactListener(
+                            // Listen for when contact's begin
+                            function (contact) {
+                                // Send collision damage to both players
+                                var playerA = ige.$(contact.igeEntityA()._id),
+                                    playerB = ige.$(contact.igeEntityB()._id),
+                                    dmgtoA = Math.random() * 10,
+                                    dmgtoB = Math.random() * 10;
+
+                                self.players[playerA.id()].status.hp -= dmgtoA;
+                                self.players[playerA.id()].status.hp -= dmgtoB;
+                                // Check if A was killed by B
+                                if(playerA.status.hp <= 0)
+                                {
+                                    playerDeath(playerA.id(),playerB.id());
+                                }
+                                else
+                                    ige.network.send('playerDamage',dmgtoA,playerA.id());
+
+                                // Check if B was killed by A
+                                if(playerB.status.hp <= 0)
+                                {
+                                    playerDeath(playerB.id(),playerA.id());
+                                }
+                                else
+                                    ige.network.send('playerDamage',dmgtoB,playerB.id());
+
+                            },
+                            // Listen for when contact's end
+                            function (contact) {
+                                //console.log('Contact ends between', getID(contact.igeEntityA()._id), 'and', getID(contact.igeEntityB()._id));
+                            },
+                            function (contact) {
+                                var objA = ige.$(contact.igeEntityA()._id),
+                                    objB = ige.$(contact.igeEntityB()._id),
+                                    par = [];
+
+                                par[0] = objA.parent();
+                                par[1] = objB.parent();
+                                if(contact.igeEitherId('bullet') && contact.igeEitherId('bullet')) contact.SetEnabled(false);
+                                if(objA.id() == objB.id() || objA.id() == par[1].id() || objB.id() == par[0].id()) contact.SetEnabled(false);
+
+
+                            }
+                        );
+                        //ige.box2d.enableDebug(self.mainScene);
+                        function playerDeath(clientid,killer) {
+                            // Player has no HP so send death message and ID of killer
+                            ige.network.send('playerDeath',killer, clientid);
+                            // delete player id from array and remove entity
+                            ige.server.players[clientid].destroy();
+                            delete ige.server.players[clientid];
+
+                        }
 					}
 				});
 			});
