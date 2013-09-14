@@ -23,6 +23,7 @@ var Player = IgeEntityBox2d.extend({
                 ammo:  10,
                 hp: 100,
                 reloading: false
+                chargePower: 1;
             };
 
 
@@ -100,17 +101,23 @@ var Player = IgeEntityBox2d.extend({
                 this.velocity.y(this.velocity._x * .7);
             }
             if (this.controls.shoot) {
-                if(!this.status.reloading) {
-                    this.bullet = new Bullet()
-                        .streamMode(1)
-                        .id('bullet')
-                        .velocity.byAngleAndPower(this._rotate.z + Math.radians(-180), 2)
-                        .mount(this);
-
+                if (!this.status.reloading) {
+                    ++chargePower;
                     this.status.reloading = true;
                 }
             }
-		}
+            if (!this.controls.shoot && this.status.chargePower > 5) {
+
+                this.bullet = new Bullet()
+                    .streamMode(1)
+                    .id('bullet')
+                    .velocity.byAngleAndPower(this._rotate.z + Math.radians(-180), this.status.chargePower)
+                    .mount(this);
+
+                this.status.chargePower = 5;
+                this.status.reloading = true;
+            }
+	}
 		/* CEXCLUDE */
 
 		if (!ige.isServer) {
