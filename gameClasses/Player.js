@@ -18,14 +18,13 @@ var Player = IgeEntityBox2d.extend({
 		};
 
         // Create status variables
-
         this.status = {
              ammo:  10,
              hp: 100,
              reloading: false,
+             chargePower: 1,
              alive: true
-         };
-
+        };
 
 		if (ige.isServer) {
 			this.addComponent(IgeVelocityComponent);
@@ -80,7 +79,7 @@ var Player = IgeEntityBox2d.extend({
 	 */
 	tick: function (ctx) {
 		/* CEXCLUDE */
-		if (ige.isServer) {
+		if (ige.isServer && this.status.alive) {
 			if (this.controls.left) {
 				this.rotateBy(0, 0, Math.radians(-0.2 * ige._tickDelta));
 			}
@@ -100,23 +99,30 @@ var Player = IgeEntityBox2d.extend({
                 this.velocity.x(this.velocity._x * .7);
                 this.velocity.y(this.velocity._x * .7);
             }
-            if (this.controls.shoot) {
-                if(!this.status.reloading) {
-                    this.bullet = new Bullet()
-                        .streamMode(1)
-                        .id('bullet')
-                        .velocity.byAngleAndPower(this._rotate.z + Math.radians(-180), 2)
-                        .mount(this);
 
-                    this.status.reloading = true;
+            if (this.controls.shoot) {
+                if (!this.status.reloading) {
+                    ++this.status.chargePower;
                 }
             }
 
-            if(!this.alive) {
-                this.hide();
+            if (!this.controls.shoot && this.status.chargePower > 5) {
+
+                /*this.bullet = new Bullet()
+                    .streamMode(1)
+                    .id('bullet')
+                    .velocity.byAngleAndPower(this._rotate.z + Math.radians(-180), this.status.chargePower)
+                    .mount(this);        */
+                console.log('shot fired by player:',this.id(),'with power',this.status.chargePower);
+                this.status.chargePower = 0;
+                --this.status.ammo;
+                this.status.reloading = true;
             }
-            else this.show();
 		}
+        else if(!this.status.alive && ige.isServer) {
+            this.hide();
+        }
+
 		/* CEXCLUDE */
 
 		if (!ige.isServer) {
