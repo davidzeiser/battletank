@@ -19,11 +19,12 @@ var Player = IgeEntityBox2d.extend({
 
         // Create status variables
 
-            this.status = {
-                ammo:  10,
-                hp: 100,
-                reloading: false
-            };
+        this.status = {
+             ammo:  10,
+             hp: 100,
+             reloading: false,
+             alive: true
+         };
 
 
 		if (ige.isServer) {
@@ -110,6 +111,11 @@ var Player = IgeEntityBox2d.extend({
                     this.status.reloading = true;
                 }
             }
+
+            if(!this.alive) {
+                this.hide();
+            }
+            else this.show();
 		}
 		/* CEXCLUDE */
 

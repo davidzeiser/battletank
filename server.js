@@ -84,11 +84,13 @@ var Server = IgeClass.extend({
                                     dmgtoB = Math.random() * 10;
 
                                 self.players[playerA.id()].status.hp -= dmgtoA;
-                                self.players[playerA.id()].status.hp -= dmgtoB;
+                                self.players[playerB.id()].status.hp -= dmgtoB;
                                 // Check if A was killed by B
                                 if(playerA.status.hp <= 0)
                                 {
-                                    playerDeath(playerA.id(),playerB.id());
+                                    ige.network.send('playerDeath',playerB.id(), playerA.id());
+                                    self.players[playerA.id()].alive = false;
+                                    //delete self.players[playerA.id()];
                                 }
                                 else
                                     ige.network.send('playerDamage',dmgtoA,playerA.id());
@@ -96,7 +98,9 @@ var Server = IgeClass.extend({
                                 // Check if B was killed by A
                                 if(playerB.status.hp <= 0)
                                 {
-                                    playerDeath(playerB.id(),playerA.id());
+                                    ige.network.send('playerDeath',playerA.id(), playerB.id());
+                                    self.players[playerB.id()].alive = false;
+                                    //delete self.players[playerB.id()];
                                 }
                                 else
                                     ige.network.send('playerDamage',dmgtoB,playerB.id());
@@ -119,15 +123,6 @@ var Server = IgeClass.extend({
 
                             }
                         );
-                        //ige.box2d.enableDebug(self.mainScene);
-                        function playerDeath(clientid,killer) {
-                            // Player has no HP so send death message and ID of killer
-                            ige.network.send('playerDeath',killer, clientid);
-                            // delete player id from array and remove entity
-                            ige.server.players[clientid].destroy();
-                            delete ige.server.players[clientid];
-
-                        }
 					}
 				});
 			});
